@@ -15,6 +15,8 @@ import mediapipe as mp
 import numpy as np
 from torchvision import transforms, models
 from pathlib import Path
+import socket
+import time
 
 SCRIPT_DIR = Path(__file__).parent
 MODEL_PATH = SCRIPT_DIR / "fnaf_hgr_final.pth"
@@ -22,13 +24,22 @@ CONFIDENCE_THRESHOLD = 0.55
 CROP_PADDING = 0.25
 IMG_SIZE = 224
 
+# --- UDP CLIENT SETUP ---
+UDP_IP = "100.83.49.246" # Computer 2's IPv4 Address goes here
+UDP_PORT = 5005
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+last_send_time = 0
+COOLDOWN_SECONDS = 3.0
+TARGET_GESTURES = ["ok", "palm", "two_sideways_left", "two_sideways_right", "mute", "two_up"]
+# ------------------------
+
 preprocess = transforms.Compose([
     transforms.ToPILImage(),
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 ])
-
 
 def load_model(path, device):
     ckpt = torch.load(path, map_location=device, weights_only=False)
@@ -41,7 +52,6 @@ def load_model(path, device):
     model.to(device)
     model.eval()
     return model, idx_to_class
-
 
 def get_hand_bbox(hand_landmarks, frame_w, frame_h, padding=CROP_PADDING):
     xs = [lm.x for lm in hand_landmarks.landmark]
@@ -60,21 +70,20 @@ def get_hand_bbox(hand_landmarks, frame_w, frame_h, padding=CROP_PADDING):
             int(x_max * frame_w), int(y_max * frame_h))
 
 def get_finger_direction(hand_landmarks):
-    """Determine if fingers point up, down, left, or right."""
     wrist = hand_landmarks.landmark[0]
     middle_tip = hand_landmarks.landmark[12]
 
     dx = middle_tip.x - wrist.x
-    dy = middle_tip.y - wrist.y  # y increases downward
+    dy = middle_tip.y - wrist.y  
 
-    # If vertical movement dominates -> up/down
-    # If horizontal movement dominates -> left/right
     if abs(dy) > abs(dx):
         return "up" if dy < 0 else "down"
     else:
         return "right" if dx > 0 else "left"
 
 def main():
+    global last_send_time
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
@@ -82,7 +91,6 @@ def main():
     print(f"Classes: {list(idx_to_class.values())}")
 
     mp_hands = mp.solutions.hands
-    #mp_draw = mp.solutions.drawing_utils
     hands = mp_hands.Hands(
         static_image_mode=False,
         max_num_hands=2,
@@ -108,8 +116,6 @@ def main():
 
         if results.multi_hand_landmarks:
             for hand_lm in results.multi_hand_landmarks:
-                #mp_draw.draw_landmarks(frame, hand_lm, mp_hands.HAND_CONNECTIONS)
-
                 x1, y1, x2, y2 = get_hand_bbox(hand_lm, w, h)
                 if x2 - x1 < 10 or y2 - y1 < 10:
                     continue
@@ -125,12 +131,10 @@ def main():
                     conf = conf.item()
                     pred = pred.item()
 
-                # Resolve handedness
                 hand_label = "?"
                 if results.multi_handedness:
                     hand_idx = list(results.multi_hand_landmarks).index(hand_lm)
                     handedness = results.multi_handedness[hand_idx].classification[0].label
-                    # Flip because frame is mirrored
                     hand_label = "Left" if handedness == "Left" else "Right"
 
                 if conf >= CONFIDENCE_THRESHOLD:
@@ -143,6 +147,18 @@ def main():
 
                     label = f"{gesture_name} ({conf:.0%})"
                     color = (0, 255, 0)
+                    
+                    # --- UDP SEND LOGIC ---
+                    if gesture_name in TARGET_GESTURES:
+                        current_time = time.time()
+                        if (current_time - last_send_time) > COOLDOWN_SECONDS:
+                            # Package the hand and gesture together (e.g., "Left:palm")
+                            payload = f"{hand_label}:{gesture_name}"
+                            sock.sendto(payload.encode('utf-8'), (UDP_IP, UDP_PORT))
+                            print(f"Network Send -> {payload}")
+                            last_send_time = current_time
+                    # ----------------------
+                    
                 else:
                     label = f"? ({conf:.0%})"
                     color = (128, 128, 128)
@@ -153,7 +169,6 @@ def main():
                 cv2.putText(frame, label, (x1, y1 - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
 
-                # Show handedness below the bounding box
                 cv2.putText(frame, f"{hand_label} hand", (x1, y2 + 25),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 200, 0), 2)
 
@@ -164,7 +179,6 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
     hands.close()
-
 
 if __name__ == "__main__":
     main()
