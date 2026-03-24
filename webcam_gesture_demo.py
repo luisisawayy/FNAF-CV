@@ -25,14 +25,13 @@ CROP_PADDING = 0.25
 IMG_SIZE = 224
 
 # --- UDP CLIENT SETUP ---
-UDP_IP = "100.83.49.246" # Computer 2's IPv4 Address goes here
+UDP_IP = " " # Computer 2's IPv4 Address would go here
 UDP_PORT = 5005
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 last_send_time = 0
 COOLDOWN_SECONDS = 3.0
 TARGET_GESTURES = ["ok", "palm", "two_sideways_left", "two_sideways_right", "mute", "two_up"]
-# ------------------------
 
 preprocess = transforms.Compose([
     transforms.ToPILImage(),
@@ -152,12 +151,11 @@ def main():
                     if gesture_name in TARGET_GESTURES:
                         current_time = time.time()
                         if (current_time - last_send_time) > COOLDOWN_SECONDS:
-                            # Package the hand and gesture together (e.g., "Left:palm")
+                            # package the hand and gesture together (e.g., "Left:palm")
                             payload = f"{hand_label}:{gesture_name}"
                             sock.sendto(payload.encode('utf-8'), (UDP_IP, UDP_PORT))
                             print(f"Network Send -> {payload}")
                             last_send_time = current_time
-                    # ----------------------
                     
                 else:
                     label = f"? ({conf:.0%})"

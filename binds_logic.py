@@ -18,10 +18,10 @@ PAN_DELAY = 0.4
 
 # maps actions to camera directions for cam_direction_map (up, down, right, left)
 direction_index = {
-    7: 0, #up
-    8: 1, #down
-    5: 2, #right
-    2: 3, #left
+    7: 0, # up
+    8: 1, # down
+    5: 2, # right
+    3: 3, # left 
 }
 
 # maps cameras to their directional neighbors (up, down, right, left)
@@ -30,7 +30,7 @@ cam_direction_map = {
     "1B": ["1A", "1C", "7", "5"],
     "1C": ["1B", "3", "7", "5"],
     "2A": ["1C", "2B", "4A", "3"],
-    "2B": ["2A", "0", "4N", "0"],
+    "2B": ["2A", "0", "4B", "0"], # changed 4N to 4B assuming typo
     "3":  ["1C", "0", "2A", "0"],
     "4A": ["6", "4B", "6", "2A"],
     "4B": ["4A", "0", "0", "2B"],
@@ -39,29 +39,25 @@ cam_direction_map = {
     "7":  ["1A", "6", "0", "1B"],
 }
 
-#TODO: finish the formatting
+# camera pixel coordinates
 cam_pixel_map = {
     "1A": (1224, 435),
     "1B": (1200, 505),
-    # Cam 1C: (1159, 604)
-    # Cam 2A: (1223, 746)
-    # Cam 2B: (1228, 799)
-    # Cam 3: (1119, 724)
-    # Cam 4A: (1354, 748)
-    # Cam 4B: (1359, 800)
-    # Cam 5: (1068, 544)
-    # Cam 6: (1483, 705)
-    # Cam 7: (1488, 536)
+    "1C": (1159, 604),
+    "2A": (1223, 746),
+    "2B": (1228, 799),
+    "3":  (1119, 724),
+    "4A": (1354, 748),
+    "4B": (1359, 800),
+    "5":  (1068, 544),
+    "6":  (1483, 705),
+    "7":  (1488, 536)
 }
 
 in_camera = False
 curr_cam = "1A"
 
 def get_action_id(hand, gesture):
-    """
-    Evaluates the hand and gesture to determine the correct action ID.
-    If no hand is specified in the rule, it works for 'Left' or 'Right'.
-    """
     if gesture == "ok":
         return 1
     elif gesture == "palm" and hand == "Left":
@@ -78,27 +74,37 @@ def get_action_id(hand, gesture):
         return 7
     elif gesture == "two_down":
         return 8
-    return None # Returns None if the combination doesn't match any rules
+    return None
 
 def camera_action(action_id):
-    if action_id == 1:
-        #TODO: toggle camera tablet off, then set in_camera to false
+    global in_camera, curr_cam
     
+    if action_id == 1:
+        print("Camera Action: Toggling Camera Tablet OFF")
+        pyautogui.moveTo(TABLET[0], TABLET[1])
+        pyautogui.moveTo(706, 765) 
+        in_camera = False
     else:
         if action_id not in direction_index:
             print(f"Invalid camera action ID: {action_id}")
-            return #TODO: do we want to handle this action on the main screen by closing the tablet then attempting the action?
+            return 
+        
+        dir_idx = direction_index[action_id]
+        new_cam = cam_direction_map[curr_cam][dir_idx]
+        
+        if new_cam != "0":
+            print(f"Camera Nav: {curr_cam} -> {new_cam}")
+            curr_cam = new_cam
+            target_x, target_y = cam_pixel_map[curr_cam]
+            pyautogui.click(target_x, target_y)
         else:
-            direction = direction_index[action_id]
-            camera = #TODO: set camera using cam_map
-            curr_cam = camera # set new curr camera 
-            #TODO call py autogui to click the correct camera pixel
-
+            print(f"Cannot move in that direction from {curr_cam}.")
 
 def fnaf_action(action_id):
-    """Executes mouse movements for a given action in FNAF, based on input ID (key pressed)."""
+    global in_camera
+    
     if action_id == 1:
-        print("Action 1: Toggling Camera Tablet")
+        print("Action 1: Toggling Camera Tablet ON")
         pyautogui.moveTo(TABLET[0], TABLET[1])
         pyautogui.moveTo(706, 765) 
         in_camera = True
@@ -141,6 +147,13 @@ def fnaf_action(action_id):
         time.sleep(PAN_DELAY)
         pyautogui.click(HONK_FREDDY[0], HONK_FREDDY[1]) 
 
+def route_action(action_id):
+    """Routes the incoming action to the correct function based on camera state."""
+    if in_camera:
+        camera_action(action_id)
+    else:
+        fnaf_action(action_id)
+
 def start_udp_server():
     """Listens for incoming network gestures and parses handedness."""
     UDP_IP = "0.0.0.0" 
@@ -156,45 +169,40 @@ def start_udp_server():
         payload = data.decode('utf-8')
         print(f"[NETWORK] Received payload: '{payload}' from {addr[0]}")
         
-        # Split the string "Hand:Gesture" into two variables
         if ":" in payload:
             hand, gesture = payload.split(":", 1)
-            
-            # Run it through the logic check
             action_id = get_action_id(hand, gesture)
             
             if action_id:
-                if in_camera:
-                    #TODO: handle camera actions in the camera action function
-                else:
-                    threading.Thread(target=fnaf_action, args=(action_id,)).start()
+                threading.Thread(target=route_action, args=(action_id,)).start()
 
-# Start the listener thread in the background
 listener_thread = threading.Thread(target=start_udp_server, daemon=True)
 listener_thread.start()
 
-# keyboard bindings for FNAF actions 1-7
-keyboard.add_hotkey('1', lambda: fnaf_action(1))
-keyboard.add_hotkey('2', lambda: fnaf_action(2))
-keyboard.add_hotkey('3', lambda: fnaf_action(3))
-keyboard.add_hotkey('4', lambda: fnaf_action(4))
-keyboard.add_hotkey('5', lambda: fnaf_action(5))
-keyboard.add_hotkey('6', lambda: fnaf_action(6))
-keyboard.add_hotkey('7', lambda: fnaf_action(7))
+# action keyboard binds
+keyboard.add_hotkey('1', lambda: route_action(1))
+keyboard.add_hotkey('2', lambda: route_action(2))
+keyboard.add_hotkey('3', lambda: route_action(3))
+keyboard.add_hotkey('4', lambda: route_action(4))
+keyboard.add_hotkey('5', lambda: route_action(5))
+keyboard.add_hotkey('6', lambda: route_action(6))
+keyboard.add_hotkey('7', lambda: route_action(7))
+keyboard.add_hotkey('8', lambda: route_action(8)) # added bind for navigating down in camera view
 
 print("""
 =========================================
 Keyboard Control Menu - Five Nights at Freddy's  
 =========================================
 [1] Toggle Camera Tablet
-[2] Toggle Left Door
-[3] Flash Left Light (0.5s)
-[4] Toggle Right Door
-[5] Flash Right Light (0.5s)
+[2] Toggle Left Door / Navigate Left
+[3] Flash Left Light / Navigate Left
+[4] Toggle Right Door / Navigate Right
+[5] Flash Right Light / Navigate Right
 [6] Mute Phone Guy
-[7] Honk Freddy's Nose 
+[7] Honk Freddy's Nose / Navigate Up
+[8] Navigate Down
 -----------------------------------------
-Press keys 1-7 to perform actions
+Press keys 1-8 to perform actions
 Press 'ESC' to exit
 =========================================
 """)
