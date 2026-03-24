@@ -36,7 +36,7 @@ When the Camera Tablet is active, directional gestures (`two_up`, `two_down`, `t
 **Environment Setup (Run on both machines):**
 ```bash
 python3.12 -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+source venv/bin/activate  
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
