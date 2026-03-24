@@ -29,7 +29,8 @@ When the Camera Tablet is active, directional gestures (`two_up`, `two_down`, `t
 
 ## Setup Instructions
 
-**Prerequisites:** Python 3.12 is required (PyTorch currently does not support Python 3.13+).
+**Prerequisites:** 
+* Python 3.12 is required (PyTorch currently does not support Python 3.13+).
 * Two computers connected to the same local Wi-Fi network
 
 **Environment Setup (Run on both machines):**
