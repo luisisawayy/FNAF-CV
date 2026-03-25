@@ -52,6 +52,7 @@ Before running, you must point the AI client to the game server.
 Because this uses a client-server architecture, the game server must be listening *before* the AI client starts sending data.
 
 **Step 1: Start the Game Server (Computer 2)**
+
 Open the game in fullscreen, and in your activated environment, run:
 ```bash
 python binds_logic.py
@@ -59,6 +60,7 @@ python binds_logic.py
 *(Note: You may need to grant Python permission through Windows Defender/Firewall to receive UDP packets).*
 
 **Step 2: Start the CV Client (Computer 1)**
+
 In your activated environment, run:
 ```bash
 python webcam_gesture_demo.py
