@@ -25,13 +25,13 @@ CROP_PADDING = 0.25
 IMG_SIZE = 224
 
 # --- UDP CLIENT SETUP ---
-UDP_IP = " " # Computer 2's IPv4 Address would go here
+UDP_IP = "" # Computer 2's IPv4 Address would go here
 UDP_PORT = 5005
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 last_send_time = 0
 COOLDOWN_SECONDS = 3.0
-TARGET_GESTURES = ["ok", "palm", "two_sideways_left", "two_sideways_right", "mute", "two_up"]
+TARGET_GESTURES = ["ok", "palm", "two_sideways_left", "two_sideways_right", "mute", "two_up", "two_down"]
 
 preprocess = transforms.Compose([
     transforms.ToPILImage(),
