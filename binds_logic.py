@@ -1,3 +1,10 @@
+"""
+binds_logic.py - Contains the logic for handling keyboard bindings and mapping them to FNAF actions based
+on inference results from the computer vision gesture model.
+
+Usage:
+    python binds_logic.py
+"""
 import pyautogui
 import time
 import keyboard
@@ -58,6 +65,7 @@ in_camera = False
 curr_cam = "1A"
 
 def get_action_id(hand, gesture):
+    """Maps hand and gesture combinations to specific action IDs for routing."""
     if gesture == "ok":
         return 1
     elif gesture == "palm" and hand == "Left":
@@ -77,6 +85,7 @@ def get_action_id(hand, gesture):
     return None
 
 def camera_action(action_id):
+    """Executes camera navigation actions based on the current camera and the action ID."""
     global in_camera, curr_cam
     
     if action_id == 1:
@@ -101,6 +110,7 @@ def camera_action(action_id):
             print(f"Cannot move in that direction from {curr_cam}.")
 
 def fnaf_action(action_id):
+    """Executes the corresponding FNAF action through PyAutoGUI based on the action ID."""
     global in_camera
     
     if action_id == 1:

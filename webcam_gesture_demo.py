@@ -1,8 +1,5 @@
 """
-gesture_webcam.py - Real-time hand gesture recognition
-
-Requirements:
-    pip install torch torchvision mediapipe opencv-python
+webcam_gesture_webcam.py - Real-time hand gesture recognition using a webcam feed, with a pre-trained PyTorch model.
 
 Usage:
     python gesture_webcam.py
@@ -147,7 +144,7 @@ def main():
                     label = f"{gesture_name} ({conf:.0%})"
                     color = (0, 255, 0)
                     
-                    # --- UDP SEND LOGIC ---
+                    # UDP Send Logic
                     if gesture_name in TARGET_GESTURES:
                         current_time = time.time()
                         if (current_time - last_send_time) > COOLDOWN_SECONDS:

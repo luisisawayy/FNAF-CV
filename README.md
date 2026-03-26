@@ -29,11 +29,16 @@ When the Camera Tablet is active, directional gestures (`two_up`, `two_down`, `t
 
 ## Setup Instructions
 
-**Prerequisites:** 
+*Note: Five Nights at Freddy's Executable Game File cannot be minimized, and thus there is no easy way to have both the webcam inference file and the game file on display at the same time. If you want to view the webcam inference at the same time as the game, you  have to run the webcam inference and game in two seperate machines each, or run them both on a single machine with two monitors to have them both open in different views.*
+
+*Additionally, you can also just run it on a single machine with only one monitor/screen if you don't necessarily need to also have the webcam inference in view. **It will still work perfectly fine**, with the only difference being you won't be able to see the webcam inference classifying your hand gestures in real time. It all depends on the user's preference*
+
+
+**General Prerequisites:** 
 * Python 3.12 is required (PyTorch currently does not support Python 3.13+).
 * Two computers connected to the same local Wi-Fi network
 
-**Environment Setup (Run on both machines):**
+**General Environment Setup (Run on all machines):**
 ```bash
 python3.12 -m venv venv
 source venv/bin/activate  
@@ -42,12 +47,21 @@ pip install -r requirements.txt
 ```
 
 **Network Configuration:**
-Before running, you must point the AI client to the game server.
+Assuming you are running the webcam inference and game on two seperate machines, before executing, you must point the AI client to the game server.
+
+**If you are running the project on one singular machine, you can disregard this bit.**
 1. Find the local IPv4 address of the computer running the game.
 2. Open `webcam_gesture_demo.py` on a seperate machine.
 3. Update the `UDP_IP` variable to match Computer 2's IP address.
 
+
 ## Running the Project
+
+*Below are the two different possible setups that cover the launching preferences discussed in the Setup Instructions:*
+
+### Option 1: Running the Game and Webcam Inference on Two Seperate Machines
+
+**Be sure that you ran the environment setup on both machines!**
 
 Because this uses a client-server architecture, the game server must be listening *before* the AI client starts sending data.
 
@@ -66,6 +80,19 @@ In your activated environment, run:
 python webcam_gesture_demo.py
 ```
 Press `q` to quit the webcam feed. Press `esc` to terminate the game server.
+
+### Option 2: Running the Game and Webcam Inference on one machine
+
+**Be sure that you ran the environment setup on this machine!**
+
+**Step 1: Run the Single Executable**
+
+In your activated environment, run:
+```bash
+python index.py
+```
+After this, you can simply just open FNAF and start making gestures. If you have a computer with two monitors, you can drag the webcam inference into one monitor, and have the game running on the other. Press `esc` to terminate the game and the webcam inference.
+
 
 ## Limitations 
 * **Resolution Dependency:** `pyautogui` relies on absolute, hardcoded pixel coordinates. The current `binds_logic.py` script is calibrated strictly for a `1920x1200` fullscreen window. Running the game at different resolutions will result in missed clicks, and appropriate configuration for each different resolution is required.
