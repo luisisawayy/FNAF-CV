@@ -1,9 +1,9 @@
 """
-index.py - Combines the logic from binds_logic.py and webcam_gesture_demo.py into a single executable 
+index1.py - Combines the logic from binds_fnaf1.py and webcam_gesture_demo.py into a single executable file
 for user preference of running on a single machine as opposed to the distributed setup of running on two machines.
 
 Usage:
-    python index.py
+    python index1.py
 """
 import cv2
 import torch

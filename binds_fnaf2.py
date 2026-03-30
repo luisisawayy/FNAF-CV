@@ -49,7 +49,7 @@ cam_direction_map = {
     "12": ["11", "0", "0", "10"]   # Kid's Cove
 }
 
-# Dummy pixel coordinates for the 12 camera buttons
+# pixel coordinates for the 12 camera buttons
 cam_pixel_map = {
     "1": (1121, 876), 
     "2": (1372, 871), 
@@ -106,7 +106,7 @@ def camera_action(action_id):
             curr_cam = "11"
             target_x, target_y = cam_pixel_map[curr_cam]
             pyautogui.click(target_x, target_y)
-            time.sleep(0.2) # Wait for camera to switch
+            time.sleep(0.2) 
             
         pyautogui.moveTo(MUSIC_BOX[0], MUSIC_BOX[1])
         pyautogui.mouseDown()
